@@ -13,6 +13,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
 import coil.compose.AsyncImage
 import com.eloinavarro.docscanner.R
+import java.util.UUID
 
 @Composable
 fun ScannedElement(

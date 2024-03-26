@@ -1,13 +1,13 @@
 package com.eloinavarro.docscanner.ui.navigation
 
-import android.net.Uri
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.eloinavarro.docscanner.domain.ScannedDocument
 
 sealed class NavItem(
     val baseRoute: String,
-    val navArgs: List<NavArg> = emptyList()
-    ) {
+    private val navArgs: List<NavArg> = emptyList()
+) {
 
     val route = run {
         val argKeys = navArgs.map { "{${it.key}}" }
@@ -19,11 +19,11 @@ sealed class NavItem(
     }
 
     object Main : NavItem("main")
-    object Detail : NavItem("detail", listOf(NavArg.Uri)) {
-        fun createNavRoute(uri: Uri) = "$baseRoute/$uri"
+    object Detail : NavItem("detail", listOf(NavArg.UUID)) {
+        fun createNavRoute(scannedDocument: ScannedDocument) = "$baseRoute/${scannedDocument.id}"
     }
 }
 
 enum class NavArg(val key: String, val navType: NavType<*>) {
-    Uri("uri", NavType.StringType)
+    UUID("uuid", NavType.StringType)
 }

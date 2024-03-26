@@ -1,5 +1,6 @@
 package com.eloinavarro.docscanner.ui.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -8,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.eloinavarro.docscanner.ui.screens.detail.DetailScreen
 import com.eloinavarro.docscanner.ui.screens.overview.OverviewScreen
+import java.util.UUID
 
 @Composable
 fun Navigation() {
@@ -17,13 +19,16 @@ fun Navigation() {
         startDestination = NavItem.Main.route
     ) {
         composable(NavItem.Main) {
-            OverviewScreen { uri ->
-                navController.navigate(NavItem.Detail.createNavRoute(uri))
-            }
+            OverviewScreen(onItemClick = { scannedDocument ->
+                navController.navigate(NavItem.Detail.createNavRoute(scannedDocument))
+                Log.d("DEBUG", "Send UUID:${scannedDocument.id}")
+            })
         }
         composable(NavItem.Detail) { backStackEntry ->
+            val uuid = backStackEntry.findArg<String>(NavArg.UUID)
+            Log.d("DEBUG", "Receive UUID:$uuid")
             DetailScreen(
-                uri = backStackEntry.findArg(NavArg.Uri),
+                uuid = UUID.fromString(uuid),
                 onUpClick = { navController.popBackStack() }
             )
         }

@@ -2,6 +2,7 @@ package com.eloinavarro.docscanner.ui.screens.overview
 
 import android.app.Activity
 import android.app.Activity.RESULT_OK
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,18 +23,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import com.eloinavarro.docscanner.R
+import com.eloinavarro.docscanner.domain.ScannedDocument
+import com.eloinavarro.docscanner.injection.Provider
 import com.eloinavarro.docscanner.ui.common.FancyText
 import com.eloinavarro.docscanner.ui.common.Screen
 import com.eloinavarro.docscanner.ui.common.TextDivider
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import java.io.File
+import java.io.FileOutputStream
 
 
 @Composable
-fun OverviewScreen(onItemClick: (Uri) -> Unit) {
-    var imagesUris by remember {
-        mutableStateOf<List<Uri>>(emptyList())
+fun OverviewScreen(
+    onItemClick: (ScannedDocument) -> Unit,
+    overviewViewModel: OverviewViewModel = Provider.provideOverviewViewModel()
+) {
+    var scannedDocuments by remember {
+        mutableStateOf<List<ScannedDocument>>(emptyList())
     }
     val context = LocalContext.current
     val options = GmsDocumentScannerOptions.Builder()
@@ -53,7 +61,12 @@ fun OverviewScreen(onItemClick: (Uri) -> Unit) {
                     GmsDocumentScanningResult.fromActivityResultIntent(
                         activityResult.data
                     )
-                imagesUris = result?.pages?.map { it.imageUri } ?: emptyList()
+                overviewViewModel.setScanningResult(result)
+                scannedDocuments = overviewViewModel.scannedDocuments
+
+                result?.pdf?.let { pdf ->
+                    copyFileToInternalStorage(context, pdf)
+                }
             }
         }
     )
@@ -86,13 +99,24 @@ fun OverviewScreen(onItemClick: (Uri) -> Unit) {
                 )
             ) {
                 TextDivider(value = stringResource(R.string.txt_document_list_title))
-                if (imagesUris.isEmpty()) {
+                if (scannedDocuments.isEmpty()) {
                     FancyText(stringResource(R.string.txt_empty_list_hint))
                 } else {
-                    ScannedElementsGrid(onItemClick = onItemClick, uris = imagesUris)
+                    ScannedElementsGrid(
+                        onItemClick = onItemClick,
+                        scannedDocuments = scannedDocuments
+                    )
                 }
             }
         }
-
     }
+}
+
+fun copyFileToInternalStorage(context: Context, pdf: GmsDocumentScanningResult.Pdf): Uri {
+    val destinationFile = File(context.filesDir, "scanned.pdf")
+    val fileOutputStream = FileOutputStream(destinationFile)
+    context.contentResolver.openInputStream(pdf.uri)?.use {
+        it.copyTo(fileOutputStream)
+    }
+    return Uri.fromFile(destinationFile)
 }
