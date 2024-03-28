@@ -11,8 +11,8 @@ class Provider {
             return OverviewViewModel(ScannedDocumentRepository)
         }
 
-        fun provideDetailViewModel(id: UUID): DetailViewModel {
-            return DetailViewModel(ScannedDocumentRepository, id)
+        fun provideDetailViewModel(uuid: UUID): DetailViewModel {
+            return DetailViewModel(ScannedDocumentRepository, uuid)
         }
     }
 }

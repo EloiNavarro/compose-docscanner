@@ -2,7 +2,6 @@ package com.eloinavarro.docscanner.ui.screens.overview
 
 import android.app.Activity
 import android.app.Activity.RESULT_OK
-import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,8 +30,6 @@ import com.eloinavarro.docscanner.ui.common.TextDivider
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
-import java.io.File
-import java.io.FileOutputStream
 
 
 @Composable
@@ -40,8 +37,11 @@ fun OverviewScreen(
     onItemClick: (ScannedDocument) -> Unit,
     overviewViewModel: OverviewViewModel = Provider.provideOverviewViewModel()
 ) {
-    var scannedDocuments by remember {
-        mutableStateOf<List<ScannedDocument>>(emptyList())
+    var scannedDocument by remember {
+        mutableStateOf(ScannedDocument(Uri.EMPTY, emptyList(), 0))
+    }
+    val liveDocument = overviewViewModel.liveScannedDocument.observeForever {
+        scannedDocument = it
     }
     val context = LocalContext.current
     val options = GmsDocumentScannerOptions.Builder()
@@ -61,12 +61,10 @@ fun OverviewScreen(
                     GmsDocumentScanningResult.fromActivityResultIntent(
                         activityResult.data
                     )
-                overviewViewModel.setScanningResult(result)
-                scannedDocuments = overviewViewModel.scannedDocuments
-
-                result?.pdf?.let { pdf ->
-                    copyFileToInternalStorage(context, pdf)
-                }
+                val mainUri = result?.pdf?.uri ?: Uri.EMPTY
+                val pages = result?.pages?.map { it.imageUri } ?: emptyList()
+                ScannedDocument(mainUri, pages, System.currentTimeMillis())
+                    .also { overviewViewModel.onNewDocumentScanned(it) }
             }
         }
     )
@@ -99,24 +97,12 @@ fun OverviewScreen(
                 )
             ) {
                 TextDivider(value = stringResource(R.string.txt_document_list_title))
-                if (scannedDocuments.isEmpty()) {
+                if (scannedDocument.uri == Uri.EMPTY) {
                     FancyText(stringResource(R.string.txt_empty_list_hint))
                 } else {
-                    ScannedElementsGrid(
-                        onItemClick = onItemClick,
-                        scannedDocuments = scannedDocuments
-                    )
+                    ScannedElement(scannedDocument = scannedDocument, onClick = onItemClick)
                 }
             }
         }
     }
-}
-
-fun copyFileToInternalStorage(context: Context, pdf: GmsDocumentScanningResult.Pdf): Uri {
-    val destinationFile = File(context.filesDir, "scanned.pdf")
-    val fileOutputStream = FileOutputStream(destinationFile)
-    context.contentResolver.openInputStream(pdf.uri)?.use {
-        it.copyTo(fileOutputStream)
-    }
-    return Uri.fromFile(destinationFile)
 }

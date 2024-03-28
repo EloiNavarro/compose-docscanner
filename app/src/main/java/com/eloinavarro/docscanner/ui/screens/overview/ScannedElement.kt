@@ -1,6 +1,5 @@
 package com.eloinavarro.docscanner.ui.screens.overview
 
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,20 +12,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
 import coil.compose.AsyncImage
 import com.eloinavarro.docscanner.R
-import java.util.UUID
+import com.eloinavarro.docscanner.domain.ScannedDocument
 
 @Composable
 fun ScannedElement(
-    uri: Uri, modifier: Modifier = Modifier, onClick: () -> Unit = {}
+    scannedDocument: ScannedDocument,
+    modifier: Modifier = Modifier,
+    onClick: (ScannedDocument) -> Unit = {}
 ) {
     Card(
         modifier = modifier
-            .clickable(onClick = onClick)
+            .clickable(onClick = { onClick(scannedDocument) })
             .height(dimensionResource(id = R.dimen.image_height))
             .fillMaxWidth()
     ) {
         AsyncImage(
-            model = uri,
+            model = scannedDocument.thumbnail,
             contentScale = ContentScale.Crop,
             contentDescription = "A scanned document",
             modifier = Modifier

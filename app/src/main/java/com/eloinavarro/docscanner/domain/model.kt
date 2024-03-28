@@ -3,17 +3,19 @@ package com.eloinavarro.docscanner.domain
 import android.net.Uri
 import java.util.UUID
 
-enum class ScannedDocumentType {
-    PDF,
-    IMAGE
-}
-
-data class ScannedDocument(
-    val uri: Uri, val scannedDocumentType: ScannedDocumentType = ScannedDocumentType.IMAGE, val thumbnailUri: Uri? = null
-) {
+data class ScannedDocument(val uri: Uri, val pages: List<Uri> = emptyList(), val timestamp: Long = 0) {
     val id: UUID = generateId()
+    val thumbnail: Uri = getThumbnailUri()
 
     private fun generateId(): UUID {
-        return UUID.nameUUIDFromBytes((uri.toString() + System.currentTimeMillis().toString()).toByteArray())
+        return UUID.nameUUIDFromBytes((uri.toString() + timestamp.toString()).toByteArray())
+    }
+
+    private fun getThumbnailUri(): Uri {
+        return if(pages.isNotEmpty()) {
+            pages[0]
+        } else {
+            uri
+        }
     }
 }
